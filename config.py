@@ -1,0 +1,41 @@
+class ModelConfig(object):
+    root_dir = "/home/dp/Data/A-CORNERS"
+    negative_keys = "negative_keys"
+    positive_keys = "positive_keys"
+    positive_dir = "positive"
+    features_dir = "features"
+    pdb_base = "/home/dp/Data/PDB"
+    out_dir = "/home/dp/Data/PDB_PROCESSED/A-CORNERS"
+    segmentation_model_path = "models/best_segmentation_model.pth"
+    inference_model_path = "models/best_inference_model.pth"
+    logfile = "metadata.csv"
+    scheduler_type = None
+    eval_models_every = 2
+    n_base_processing_layers = 3
+    n_post_processing_layers = 5
+    inference_threshold = 0.99
+    model_params = dict(
+        inference_dim=128,
+        self_att_dim=64,
+        rnn_encoder_dim=16,
+        rnn_decoder_dim=32,
+        vx_input_ca=(6, 3),
+        vx_input_c=(2, 2),
+        vx_h_ca=(48, 32),
+        vx_h_c=(32, 16),
+        ex_input=(32, 1),
+        ex_hidden=(64, 1),
+        drop_rate=0.2,
+        graph_attention=False
+    )
+    scheduler_params = dict(
+        mode='min',
+        factor=0.5,
+        patience=1,
+        verbose=True,
+        threshold=0.001,
+        threshold_mode='abs',
+        cooldown=0,
+        min_lr=1e-5,
+        eps=1e-08
+    )
