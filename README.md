@@ -1,11 +1,13 @@
 # PSSNet (Protein supersecondary structure segmentation) 
 ![alt text](https://github.com/Denis21800/PSSNet/blob/master/Logo/pssnet.png)
 
+
 PSSNet – A new deep learning network architecture for semantic segmentation of supersecondary structures in proteins with small size, very high accuracy and performance.
-**The PSSNet model made it possible to identify and classify more than 2.3 million supersecondary structures in whole protein structures annotated in the PDB and AlphaFold 2.0 banks and became the basis for filling the public database of supersecondary structures https://www.psskb.org
-**
-##Model architecture
-![alt text](https://github.com/Denis21800/PSSNet/blob/master/Logo/architecture.png)
+**The PSSNet model made it possible to identify and classify more than 2.3 million supersecondary structures in whole protein structures annotated in the PDB and AlphaFold 2.0 banks and became the basis for filling the public database of supersecondary structures https://www.psskb.org**
+## Model architecture
+
+![alt text](https://github.com/Denis21800/PSSNet/blob/master/Logo/arcitecture.png)
+
 
 ## Run model
 This repository contains a pretrained model for segmenting _aa-corners_ in *.pdb files. To run the model, you need to specify the following parameters in the config.py file:
