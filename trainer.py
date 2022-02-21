@@ -140,4 +140,4 @@ N_EPOCHS = 16
 if __name__ == '__main__':
     os.environ['CUDA_LAUNCH_BLOCKING'] = "1"
     train_base_model(N_EPOCHS, 1)
-   # train_inference_model(N_EPOCHS, 8)
+    train_inference_model(N_EPOCHS, 8)
