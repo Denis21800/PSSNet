@@ -16,6 +16,7 @@ This repository contains a pretrained model for segmenting:
 -b-hairpins
 -BaB
 To extract the specified structures from the folder containing the PDB, you need to run the sss_extractor.py script.
+
 usage: sss_extractor.py [-h] -pdb PDB -out OUT [-sss SSS]
 
 Extract SSS from PDB
@@ -54,7 +55,7 @@ After specifying these parameters, you must run the command
 
 The features subdirectory will be formed containing preprocessed files for model training.
 
-o start the model training process, you need to execute the command:
+To start the model training process, you need to execute the command:
 
 **$python trainer.py**
 
