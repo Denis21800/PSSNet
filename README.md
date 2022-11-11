@@ -34,8 +34,8 @@ options:
 The output directory will contain files of pdb format with cut coordinates of supersecondary structures.
 
 Output example:
-
 ![alt text](https://github.com/Denis21800/PSSNet/blob/master/Logo/4X7F_A328_A365.png)
+4X7F_A328_A365.pdb
 
 ## Train model
 To train the model, it is necessary to prepare training datasets:
