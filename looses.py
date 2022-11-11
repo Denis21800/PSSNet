@@ -1,4 +1,3 @@
-import numpy
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -96,14 +95,13 @@ def jaccard_loss(true, logits, eps=1e-7):
 
 
 class TverskyLoss(nn.Module):
-    ALPHA = 1.7
-    BETA = 0.7
+    ALPHA = 1.0
+    BETA = 1.0
 
     def __init__(self, weight=None, size_average=True):
         super(TverskyLoss, self).__init__()
 
     def forward(self, inputs, targets, smooth=1, alpha=ALPHA, beta=BETA):
-        # comment out if your model contains a sigmoid or equivalent activation layer
 
         # flatten label and prediction tensors
         inputs = inputs.view(-1)

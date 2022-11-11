@@ -1,10 +1,13 @@
 import torch
-from attention import SelfAttention, GAT
-from gvp_layers import GVP, GVPConvLayer, LayerNorm
-import torch_cluster, torch_geometric, torch_scatter
 import torch.nn as nn
 import torch.nn.functional as F
+import torch_geometric
+from torch_geometric.nn import Set2Set
+from torch_geometric.nn import TransformerConv
+
+from attention import SelfAttention
 from config import ModelConfig
+from gvp_layers import GVP, GVPConvLayer, LayerNorm
 
 aa_max_len = 21
 
@@ -49,9 +52,9 @@ class PSSModel(nn.Module):
         gvp_inference_dim = hvx_dim
         rnn_encoder_dim = config.model_params['rnn_encoder_dim']
         rnn_decoder_dim = config.model_params['rnn_decoder_dim']
-        if not self.shortcut:
-            self.rnn_encoder_norm = nn.LayerNorm(hvx_dim[0])
-            self.rnn_decoder_norm = nn.LayerNorm(config.model_params['self_att_dim'])
+
+        self.rnn_encoder_norm = nn.LayerNorm(hvx_dim[0])
+        self.rnn_decoder_norm = nn.LayerNorm(config.model_params['self_att_dim'])
 
         self.bi_rnn_encoder = nn.GRU(hvx_dim[0], rnn_encoder_dim, 2, True, True, drop_rate, True)
         self.bi_rnn_decoder = nn.ModuleList(nn.GRU(config.model_params['self_att_dim'], rnn_decoder_dim,
@@ -73,20 +76,24 @@ class PSSModel(nn.Module):
 
         if self.shortcut:
             inference_dim = config.model_params['inference_dim']
-            self.graph_att = GAT(in_dim=gvp_inference_dim[0],
-                                 out_dim=gvp_inference_dim[0])
+
             self.gvp_inference = nn.Sequential(
                 LayerNorm(gvp_inference_dim),
                 GVP(gvp_inference_dim, (inference_dim, 0),
                     activations=(F.leaky_relu, F.leaky_relu))
             )
 
+            if self.use_gat:
+                self.graph_att = TransformerConv(in_channels=inference_dim, out_channels=inference_dim, heads=4)
+                inference_dim *= 4
+
             self.inference = nn.Sequential(
-                nn.Linear(inference_dim * 3, inference_dim // 2),
+                nn.Linear(2 * inference_dim, inference_dim // 2),
                 nn.LeakyReLU(),
                 nn.Linear(inference_dim // 2, 1),
                 nn.Sigmoid()
             )
+            self.pool = Set2Set(inference_dim, processing_steps=64)
 
     def forward(self, batch):
         embedding = self.embedding(batch.sequence)
@@ -105,22 +112,24 @@ class PSSModel(nn.Module):
 
         for i, layer in enumerate(self.encoder):
             hx_vx = layer(hx_vx, batch.edge_index, hx_edge)
+
         if self.shortcut:
             return self.__shortcut_fw(batch, hx_vx)
 
-        rnn_input = hx_vx[0].unsqueeze(0)
+        rnn_input, rnn_mask = torch_geometric.utils.to_dense_batch(hx_vx[0], batch.batch)
         rnn_input = self.rnn_encoder_norm(rnn_input)
         rnn_output, _ = self.bi_rnn_encoder(rnn_input)
-        rnn_output = self.self_att(rnn_output.transpose(1, 2)).squeeze(0)
+        rnn_output = self.self_att(rnn_output.transpose(1, 2))
+        rnn_output = rnn_output[rnn_mask]
         rnn_output = self.rnn_decoder_norm(rnn_output)
         hx_vx = (rnn_output, hx_vx[1])
         encoder_vector = hx_vx
 
         for i, layer in enumerate(self.decoder_layers):
             hx_vx = layer(hx_vx, batch.edge_index, hx_edge, autoregressive_x=encoder_vector)
-            rnn_input = hx_vx[0].unsqueeze(0)
+            rnn_input, rnn_mask = torch_geometric.utils.to_dense_batch(hx_vx[0], batch.batch)
             rnn_output, _ = self.bi_rnn_decoder[i](rnn_input)
-            rnn_output = rnn_output.squeeze(0)
+            rnn_output = rnn_output[rnn_mask]
             hx_vx = (rnn_output, hx_vx[1])
 
         out_segmentation = self.gvp_segmentation(hx_vx)
@@ -129,13 +138,16 @@ class PSSModel(nn.Module):
 
     def __shortcut_fw(self, batch, hv):
         batch_id = batch.batch
-        if self.use_gat:
-            hvs = self.gat(hv[0], batch.edge_index)
-            hv = (hvs, hv[1])
         out_v = self.gvp_inference(hv)
-        out_scatter = torch_scatter.scatter(out_v, batch_id, dim=0)
-        out_mean = torch_scatter.scatter_mean(out_v, batch_id, dim=0)
-        out_max, _ = torch_scatter.scatter_max(out_v, batch_id, dim=0)
-        out_ = torch.cat((out_mean, out_scatter, out_max), dim=1)
+
+        if self.use_gat:
+            out_v = self.graph_att(out_v, batch.edge_index)
+
+        # out_scatter = torch_scatter.scatter(out_v, batch_id, dim=0)
+        # out_mean = torch_scatter.scatter_mean(out_v, batch_id, dim=0)
+        # out_max, _ = torch_scatter.scatter_max(out_v, batch_id, dim=0)
+        # out_ = torch.cat((out_mean, out_scatter, out_max), dim=1)
+        out_ = self.pool(out_v, batch_id)
         inference = self.inference(out_)
+
         return inference

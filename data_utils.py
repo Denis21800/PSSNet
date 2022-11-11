@@ -1,10 +1,8 @@
 import os
 import warnings
-from pathlib import Path
 
 import numpy as np
-
-from Bio.PDB import PDBExceptions, Superimposer, PDBIO
+from Bio.PDB import PDBExceptions
 from Bio.PDB import PDBParser
 
 BACKBONE_IDS = ['CA', 'C', 'N']
@@ -43,7 +41,7 @@ class PDBBackbone(object):
                     atom_id = atom_id[0]
                     if n_coord is not None and ca_coord \
                             is not None and c_coord is not None and o_coord is not None:
-                        atom_list.append([n_coord, ca_coord, c_coord, n_coord])
+                        atom_list.append([n_coord, ca_coord, c_coord, o_coord])
                         seq_id = seq_id.lower()
                         seq_name = residue.get_resname()
                         label = self.get_segment_label(segments, seq_id, seq_pos)

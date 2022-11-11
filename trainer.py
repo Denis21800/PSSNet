@@ -1,23 +1,24 @@
-import gc
+import copy
 import os
 import time
+
 import torch
+import torch.nn as nn
 import torch.optim as optim
 from tqdm import tqdm
-import copy
 
-from metrics import ModelMetrics, IOUMetrics
 from base_model import PSSModel
-from preprocessed_datasets import get_pdb_loaders
-from looses import DiceBCELoss
-import torch.nn as nn
 from config import ModelConfig
+from looses import DiceBCELoss
+from metrics import ModelMetrics, IOUMetrics
+from preprocessed_datasets import get_pdb_loaders
 
 
 class TrainerBase(object):
     def __init__(self,
                  n_epochs=16,
                  batch_size=1,
+                 model_type='aa-corner',
                  mode='segmentation'):
         self.config = ModelConfig()
         self.device = torch.device('cuda') if torch.cuda.is_available() else torch.device('cpu')
@@ -37,6 +38,7 @@ class TrainerBase(object):
         self.batch_size = batch_size
         self.model_path = self.config.segmentation_model_path if not self.shortcut \
             else self.config.inference_model_path
+        self.model_path = self.config.get_models_folder(model_type=model_type) / self.model_path
         self.optimizer = optim.Adam(self.model.parameters(), lr=0.0001, betas=(0.9, 0.999))
         if self.scheduler_type == 'cos':
             self.scheduler_ = torch.optim.lr_scheduler.CosineAnnealingLR(self.optimizer,
@@ -123,21 +125,27 @@ class TrainerBase(object):
         torch.save(best_model_wts, self.model_path)
 
 
-def train_base_model(n_epoch, batch_size):
-    trainer = TrainerBase(n_epochs=n_epoch, batch_size=batch_size)
+def train_base_model(n_epoch, batch_size, model_type):
+    trainer = TrainerBase(n_epochs=n_epoch,
+                          batch_size=batch_size,
+                          model_type=model_type
+                          )
     trainer.load_model()
     trainer.train_model()
 
 
-def train_inference_model(n_epoch, batch_size):
-    trainer = TrainerBase(n_epochs=n_epoch, batch_size=batch_size, mode='postprocessing')
+def train_inference_model(n_epoch, batch_size, model_type):
+    trainer = TrainerBase(n_epochs=n_epoch,
+                          batch_size=batch_size,
+                          model_type=model_type,
+                          mode='postprocessing')
     trainer.load_model()
     trainer.train_model()
 
 
-N_EPOCHS = 16
-
+N_EPOCHS = 24
+MODEL_TYPE = 'aa-corner'
 if __name__ == '__main__':
     os.environ['CUDA_LAUNCH_BLOCKING'] = "1"
-    train_base_model(N_EPOCHS, 1)
-    train_inference_model(N_EPOCHS, 8)
+    train_base_model(N_EPOCHS, 8, model_type=MODEL_TYPE)
+    train_inference_model(N_EPOCHS, 8, model_type=MODEL_TYPE)

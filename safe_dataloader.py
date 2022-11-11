@@ -1,8 +1,9 @@
-from typing import Union, List
 from collections.abc import Mapping, Sequence
+from typing import Union, List
+
+import torch
 from torch.utils.data.dataloader import default_collate
 from torch_geometric.data import Data, HeteroData, Dataset, Batch
-import torch
 
 
 class Collater(object):

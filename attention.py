@@ -1,6 +1,6 @@
 import torch
-from torch import nn
 import torch.nn.functional as F
+from torch import nn
 from torch_geometric.nn import GATConv
 
 
@@ -19,7 +19,6 @@ class SelfAttention(nn.Module):
         self.q_map = nn.Conv1d(in_channel, out_channel, 1, bias=False)
         self.k_map = nn.Conv1d(in_channel, out_channel, 1, bias=False)
         self.v_map = nn.Conv1d(in_channel, out_channel, 1, bias=False)
-
         self.dropout = nn.Dropout(attn_dropout)
 
     def forward(self, x):

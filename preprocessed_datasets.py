@@ -1,12 +1,13 @@
 import os
 import pickle
 from pathlib import Path
+
 import torch
-from torch.utils.data import Dataset, WeightedRandomSampler
 import torch_geometric
-from protein_feature_extractor import PDBFeatures
+from torch.utils.data import Dataset, WeightedRandomSampler
 
 from config import ModelConfig
+from protein_feature_extractor import PDBFeatures
 
 
 class PreprocessedDataLoader(object):
@@ -71,7 +72,7 @@ class PTrainDataset(Dataset):
         features, sequence, seq_labels = record
         data = self.feature_extractor.extract_features(features, sequence, is_train=self.is_train)
         data.segment_labels = torch.as_tensor(seq_labels, dtype=torch.float32)
-
+        data.idx = index
         return data, cls_idx, index
 
     def __len__(self):

@@ -50,7 +50,7 @@ class PDBSelect(object):
             io_w_no_h.save(str(pdb_extract_file), ChainSelect(pos))
 
 
-def find_index(prediction_pos, sequence, tres_sum=32, tres_pad=4):
+def find_index(prediction_pos, sequence, tres_sum=30, tres_pad=1):
     if np.sum(prediction_pos) < tres_sum:
         return None, None
     prediction_pos = np.array(prediction_pos)
@@ -63,7 +63,6 @@ def find_index(prediction_pos, sequence, tres_sum=32, tres_pad=4):
     prev_pos = first_pos
     for i in range(1, len(index_positions)):
         next_pos = index_positions[i][0]
-
         if abs(next_pos - prev_pos) < tres_pad:
             if not seq_positions:
                 seq_positions.append(prev_pos)
@@ -72,7 +71,6 @@ def find_index(prediction_pos, sequence, tres_sum=32, tres_pad=4):
             total_seq.append(seq_positions.copy())
             seq_positions.clear()
         prev_pos = next_pos
-
     total_seq.append(seq_positions.copy())
     result_positions = []
     result_index = []

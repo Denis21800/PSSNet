@@ -2,14 +2,16 @@ import os
 import pickle
 import shutil
 from pathlib import Path
+
 import numpy as np
-from Bio.PDB import PDBList
-from data_utils import PDBBackbone
+from Bio.PDB import PDBList, Select, PDBParser, PDBIO
+
 from config import ModelConfig
+from data_utils import PDBBackbone
 
 
 class PDBPreprocessor(object):
-    def __init__(self, segments, split_factor=0.2):
+    def __init__(self, segments, split_factor=0.8):
         config = ModelConfig()
         root_dir = Path(config.root_dir)
         assert segments
@@ -53,7 +55,7 @@ class PDBPreprocessor(object):
         ds_positive_full = get_file_list(self.positive_dir)
         train_positive_full, val_positive_full = self.__extract_sets(dataset=ds_positive_full, label=1)
         ds_positive_short = get_file_list(self.positive_keys_dir)
-        train_positive_short, val_positive_short = self.__extract_sets(dataset=ds_positive_short, label=1)
+        train_positive_short, val_positive_short = self.__extract_sets(dataset=ds_positive_short, label=1, short=True)
 
         ds_negative = get_file_list(self.negative_dir)
         train_negative, val_negative = self.__extract_sets(dataset=ds_negative, label=0)
@@ -223,9 +225,67 @@ def prepare_data_dir(rebuild=False):
     download(positive_keys_dir, positive_dir)
 
 
+def extract_nearest():
+    config = ModelConfig()
+    root_dir = Path(config.root_dir)
+    positive_dir = root_dir / config.positive_keys
+    positive_full = root_dir / config.positive_dir
+    positive_full.mkdir(exist_ok=True)
+    pdb_dir = Path(config.pdb_base)
+    positive_file_list = get_file_list(positive_dir)
+    for file in positive_file_list:
+        filename = Path(file).stem
+        spl = str(filename).split('_')
+        key = spl[0]
+        chain = spl[1][0].upper()
+        pdb_file = pdb_dir / f'{key}.pdb'
+        x1 = int(spl[1][1:])
+        x2 = int(spl[2][1:])
+        if not os.path.exists(pdb_file):
+            continue
+        structure = PDBParser(PERMISSIVE=1).get_structure(key, str(pdb_file))
+        out_file = positive_full / f'{key}.pdb'
+        io_w_no_h = PDBIO()
+        io_w_no_h.set_structure(structure)
+        io_w_no_h.save(str(out_file), ChainSelect(chain, position=[x1, x2]))
+
+
+class ChainSelect(Select):
+    max_dx = 32
+
+    def __init__(self, chains, position=None):
+        self.chains = chains
+        self.current_chain = None
+        self.position = position
+
+    def accept_model(self, model):
+        if model.id == 0:
+            return 1
+
+    def accept_chain(self, chain):
+        if chain.get_id() in self.chains:
+            self.current_chain = chain.get_id()
+            return 1
+        else:
+            return 0
+
+    def accept_residue(self, residue):
+        dx = np.random.randint(self.max_dx // 2, self.max_dx)
+        if self.position is None:
+            return True
+        _, res_pos, _ = residue.get_id()
+        if self.position[0] - dx <= res_pos <= self.position[1] + dx:
+            return True
+        return False
+
+    @staticmethod
+    def accept_atom(atom):
+        return True
+
+
 if __name__ == "__main__":
-    prepare_data_dir(rebuild=False)
-    # remove_duplicates()
+    # prepare_data_dir(rebuild=True)
+    extract_nearest()
     segment = SegmentReader()
     segment.load_from_key_dir()
     pdb_processor = PDBPreprocessor(segment)

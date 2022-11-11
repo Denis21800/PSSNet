@@ -1,12 +1,10 @@
 import math
 
-import networkx as nx
 import numpy as np
 import torch
 import torch.nn.functional as F
-import torch_geometric
 import torch_cluster
-from matplotlib import pyplot as plt
+import torch_geometric
 from Bio.PDB.Polypeptide import three_to_index
 
 
@@ -49,6 +47,7 @@ class PDBFeatures(object):
                 idx = three_to_index(items)
             except KeyError:
                 idx = 20
+            assert 0 <= idx <= 20
             sequence_index.append(idx)
         return torch.as_tensor(sequence_index, dtype=torch.long)
 
@@ -156,21 +155,4 @@ class PDBFeatures(object):
         cos = inner_product / (2 * a_norm * b_norm)
         return cos
 
-    def plot(self, rbf):
-        r = rbf.cpu().numpy()[7, :]
-        x = np.linspace(0, 24, 32)
-        self.rbf.append(r)
-        if len(self.rbf) < 500:
-            return
-        ax = plt.axes()
-        el_r = []
-        for i, r_ in enumerate(self.rbf):
-            ax.scatter(x, r_, s=0.4, color='#1f77b4')
-            el_r.append(r_)
-        el_mean = np.vstack(el_r)
-        y = np.sum(el_mean, axis=0)
-        ax.set_xlabel("Distance (angstrom)")
-        ax.set_ylabel("Gaussian RBF")
-        ax.plot(x, y / 160, color='#ff7f0e', linewidth=2)
 
-        plt.show()

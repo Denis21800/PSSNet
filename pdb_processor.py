@@ -1,18 +1,19 @@
+import os
 import time
 from abc import ABC
 from pathlib import Path
-import pandas as pd
 
-from data_utils import PDBBackbone
-from config import ModelConfig
-import os
+import pandas as pd
 import torch
-from protein_feature_extractor import PDBFeatures
-from torch.utils.data import Dataset
-from safe_dataloader import SafeDataLoader
 import torch.utils.data
+from torch.utils.data import Dataset
+
 from base_model import PSSModel
+from config import ModelConfig
+from data_utils import PDBBackbone
 from inference_selector import find_index, PDBSelect
+from protein_feature_extractor import PDBFeatures
+from safe_dataloader import SafeDataLoader
 
 
 class PDBDatasetFromDir(Dataset, ABC):
@@ -151,7 +152,7 @@ def process_directory(root_dir, eval_model, out_dir=None, log=None):
             output = eval_model.predict_segment(data)
             output = output.squeeze(-1)
             seq_idx = torch.round(output).cpu().detach().numpy()
-            pdb_indexes, feature_indexes = find_index(prediction_pos=seq_idx, sequence=sequence)
+            pdb_indexes, feature_indexes = find_index(prediction_pos=seq_idx, sequence=sequence, tres_pad=2)
             if pdb_indexes:
                 eval_result = eval_model.eval_segment(data, feature_indexes)
                 if not eval_result:
@@ -163,16 +164,17 @@ def process_directory(root_dir, eval_model, out_dir=None, log=None):
                     target_dir = out_dir / dir_id
                     target_dir.mkdir(exist_ok=True)
                 else:
+                    sample_idx = 0
                     target_dir = out_dir / f'sample_{sample_idx}'
                     target_dir.mkdir(exist_ok=True)
-                if logger:
-                    logger.log_result(sample_id, file, pdb_indexes, scores)
+                if log:
+                    log.log_result(sample_id, file, pdb_indexes, scores)
                 selector = PDBSelect(pdb_path=file, positions=pdb_indexes, out_dir=target_dir)
                 selector.upload2pdb()
                 total_find += 1
             total_processed += 1
 
-            if (total_processed % 4096) == 0:
+            if (total_processed % 100) == 0:
                 print(f'Sample: {sample_idx} Total processed: {total_processed} Total find: {total_find}')
                 time_elapsed = time.time() - since
                 print('Time elapsed:{:.0f}m {:.0f}s'.format(time_elapsed // 60, time_elapsed % 60))
@@ -201,18 +203,24 @@ class Logger(object):
         log_df.to_csv(self.logfile, mode='a', header=False, index=False)
 
 
-if __name__ == '__main__':
+def extract(pdb_path=None,
+            out_dir=None,
+            sss_type='aa-corner'):
     config = ModelConfig()
-    out_directory = Path(config.out_dir)
-    segmentation_model_path = config.segmentation_model_path
-    segmentation_model_path = os.path.join(os.getcwd(), segmentation_model_path)
+    out_directory = Path(config.out_dir) if not out_dir else out_dir
+    model_folder = config.get_models_folder(sss_type)
+    segmentation_model_path = model_folder / config.segmentation_model_path
     assert os.path.exists(segmentation_model_path)
-    inference_model_path = config.inference_model_path
-    inference_model_path = os.path.join(os.getcwd(), inference_model_path)
+    inference_model_path = model_folder / config.inference_model_path
     assert os.path.exists(inference_model_path)
     out_directory.mkdir(exist_ok=True)
     logfile = out_directory / config.logfile
     logger = Logger(loging_file=logfile)
     model = PDBSegmentation()
     model.load_model(segmentation_model_path, inference_model_path)
+    pdb_base = config.pdb_base if not pdb_path else pdb_path
     process_directory(config.pdb_base, model, out_dir=out_directory, log=logger)
+
+
+if __name__ == '__main__':
+    extract(sss_type='b-hairpin')
