@@ -22,10 +22,10 @@ usage: sss_extractor.py [-h] -pdb PDB -out OUT [-sss SSS]
 Extract SSS from PDB
 
 options:
-  -h, --help  show this help message and exit
-  -pdb PDB    Path to the folder with the PDB database
-  -out OUT    Path to the output folder
-  -sss SSS    The type of supersecondary structure to be extracted from the
+-h, --help  show this help message and exit
+-pdb PDB    Path to the folder with the PDB database
+-out OUT    Path to the output folder
+-sss SSS    The type of supersecondary structure to be extracted from the
               PDB aa-corner', 'a-hairpin', 'b-hairpin', 'bab
 
 
