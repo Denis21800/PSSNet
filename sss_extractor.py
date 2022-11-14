@@ -7,7 +7,7 @@ from pdb_processor import extract
 parser = argparse.ArgumentParser(description='Extract SSS from PDB')
 parser.add_argument('-pdb', type=str, help='Path to the folder with the PDB database', required=True)
 parser.add_argument('-out', type=str, help='Path to the output folder', required=True)
-parser.add_argument('-sss', type=str, help="""The type of supersecondary structure to be retrieved from the PDB
+parser.add_argument('-sss', type=str, help="""The type of supersecondary structure to be extracted from the PDB
     aa-corner', 'a-hairpin', 'b-hairpin', 'bab""", default='b-hairpin', )
 args = parser.parse_args()
 pdb_path = args.pdb

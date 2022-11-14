@@ -9,7 +9,7 @@ from tqdm import tqdm
 
 from base_model import PSSModel
 from config import ModelConfig
-from looses import DiceBCELoss
+from looses import DiceBCELoss, EarlyStop
 from metrics import ModelMetrics, IOUMetrics
 from preprocessed_datasets import get_pdb_loaders
 
@@ -64,7 +64,7 @@ class TrainerBase(object):
         since = time.time()
         best_model_wts = copy.deepcopy(self.model.state_dict())
         best_result = 0.0
-
+        early_stop = EarlyStop()
         for epoch in range(self.n_epochs):
             for phase in ['train', 'val']:
                 if epoch % self.config.eval_models_every != 0 and phase == 'val':
@@ -107,6 +107,8 @@ class TrainerBase(object):
 
                 if phase == 'val':
                     epoch_result = self.metrics.print_stat()
+                    if early_stop(epoch_loss):
+                        break
                     if epoch_result > best_result:
                         best_result = epoch_result
                         best_model_wts = copy.deepcopy(self.model.state_dict())
