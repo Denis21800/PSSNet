@@ -10,16 +10,34 @@ PSSNet – A new deep learning network architecture for semantic segmentation of
 
 
 ## Run model
-This repository contains a pretrained model for segmenting _aa-corners_ in *.pdb files. To run the model, you need to specify the following parameters in the config.py file:
-- pdb_base=_path to directory containing pdb files_
-- out_dir=_path to output directory_
-  
-After specifying these parameters, run the command:
+This repository contains a pretrained model for segmenting: 
+-aa-corners
+-a-hairpins 
+-b-hairpins
+-BaB
+To extract the specified structures from the folder containing the PDB, you need to run the sss_extractor.py script.
 
-**$python pdb_processor.py**
+usage: sss_extractor.py [-h] -pdb PDB -out OUT [-sss SSS]
+
+Extract SSS from PDB
+
+options:
+-h, --help  show this help message and exit
+
+-pdb PDB    Path to the folder with the PDB database
+
+-out OUT    Path to the output folder
+
+-sss SSS    The type of supersecondary structure to be extracted from the
+              PDB aa-corner', 'a-hairpin', 'b-hairpin', 'bab
 
 The output directory will contain files of pdb format with cut coordinates of supersecondary structures.
 
+Output example (b-hairpin):
+
+![alt text](https://github.com/Denis21800/PSSNet/blob/master/Logo/4X7F_A328_A366.png)
+
+4X7F_A328_A366.pdb
 
 ## Train model
 To train the model, it is necessary to prepare training datasets:
@@ -38,14 +56,13 @@ The following parameters must be defined in the config.py file:
 - root_dir = _root directory that contains the training datasets._
 - positive_keys=_name of subdirectory containing positive examples._ 
 - negative_keys= _name of subdirectory containing negative examples_
-- 
 After specifying these parameters, you must run the command
 
 **$python preprocessor.py**
 
 The features subdirectory will be formed containing preprocessed files for model training.
 
-o start the model training process, you need to execute the command:
+To start the model training process, you need to execute the command:
 
 **$python trainer.py**
 
