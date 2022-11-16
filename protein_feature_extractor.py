@@ -36,7 +36,8 @@ class PDBFeatures(object):
     top_k = 32
     num_positional_embeddings = 16
     num_rbf = 16
-    augment_eps = 0.01
+    augment = False
+    augment_coef = 0.4
     rbf = []
 
     @staticmethod
@@ -52,14 +53,15 @@ class PDBFeatures(object):
         return torch.as_tensor(sequence_index, dtype=torch.long)
 
     def extract_features(self, features, sequence, is_train=False):
+        if is_train and self.augment and np.random.rand() < self.augment_coef:
+            features = augment(features)
+
         if type(sequence) != torch.Tensor:
             sequence_idx = self.sequence_to_index(sequence)
         else:
             sequence_idx = sequence
         coords = torch.as_tensor(features, dtype=torch.float32)
 
-        if is_train and self.augment_eps > 0:
-            coords = coords + self.augment_eps * torch.randn_like(coords)
         mask = torch.isfinite(coords.sum(dim=(1, 2)))
         coords[~mask] = np.inf
         mask = torch.isfinite(coords.sum(dim=(1, 2)))
@@ -156,3 +158,34 @@ class PDBFeatures(object):
         return cos
 
 
+def augment(data):
+    rnd_aux = np.random.rand()
+    if rnd_aux > 0.6:
+        return data
+    n, x, y = data.shape
+    coo = data.reshape(n * x, y)
+    if rnd_aux < 0.3:
+        coo = rotate_point_cloud(coo)
+    else:
+        coo = jitter_point_cloud(coo)
+    result = coo.reshape(n, x, y)
+    return result
+
+
+def jitter_point_cloud(data, sigma=0.1, clip=0.05):
+    N, C = data.shape
+    assert (clip > 0)
+    jittered_data = np.clip(sigma * np.random.randn(N, C), -1 * clip, clip)
+    jittered_data += data
+    return jittered_data
+
+
+def rotate_point_cloud(data):
+    rotation_angle = np.random.uniform() * 2 * np.pi
+    cosval = np.cos(rotation_angle)
+    sinval = np.sin(rotation_angle)
+    rotation_matrix = np.array([[cosval, 0, sinval],
+                                [0, 1, 0],
+                                [-sinval, 0, cosval]])
+    rotated_data = np.dot(data.reshape((-1, 3)), rotation_matrix)
+    return rotated_data

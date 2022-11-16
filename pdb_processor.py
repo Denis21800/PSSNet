@@ -14,6 +14,7 @@ from data_utils import PDBBackbone
 from inference_selector import find_index, PDBSelect
 from protein_feature_extractor import PDBFeatures
 from safe_dataloader import SafeDataLoader
+from torch.profiler import profile, record_function, ProfilerActivity
 
 
 class PDBDatasetFromDir(Dataset, ABC):
@@ -219,8 +220,8 @@ def extract(pdb_path=None,
     model = PDBSegmentation()
     model.load_model(segmentation_model_path, inference_model_path)
     pdb_base = config.pdb_base if not pdb_path else pdb_path
-    process_directory(config.pdb_base, model, out_dir=out_directory, log=logger)
+    process_directory(pdb_base, model, out_dir=out_directory, log=logger)
 
 
 if __name__ == '__main__':
-    extract(sss_type='b-hairpin')
+    extract(sss_type='aa-corner')

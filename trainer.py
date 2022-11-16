@@ -150,4 +150,4 @@ MODEL_TYPE = 'aa-corner'
 if __name__ == '__main__':
     os.environ['CUDA_LAUNCH_BLOCKING'] = "1"
     train_base_model(N_EPOCHS, batch_size=8, model_type=MODEL_TYPE)
-    train_inference_model(N_EPOCHS, batch_size=8, model_type=MODEL_TYPE)
+# train_inference_model(N_EPOCHS, batch_size=8, model_type=MODEL_TYPE)

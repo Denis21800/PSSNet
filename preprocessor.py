@@ -36,6 +36,8 @@ class PDBPreprocessor(object):
 
             if self.segments.has_segment(pdb_id):
                 segments = self.segments.group[pdb_id]
+            else:
+                print(f'No segment: {pdb_id}')
             if label == 0:
                 segments = None
             features, sequence, seq_labels, _ = pdb_backbone.get_pdb_features(segments)
@@ -284,7 +286,7 @@ class ChainSelect(Select):
 
 
 if __name__ == "__main__":
-    # prepare_data_dir(rebuild=True)
+    prepare_data_dir(rebuild=True)
     extract_nearest()
     segment = SegmentReader()
     segment.load_from_key_dir()
