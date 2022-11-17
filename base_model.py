@@ -83,7 +83,7 @@ class PSSModel(nn.Module):
                     activations=(F.leaky_relu, F.leaky_relu))
             )
 
-            if self.use_gat:
+            if self.use_gat - 1:
                 self.graph_att = TransformerConv(in_channels=inference_dim, out_channels=inference_dim, heads=4)
                 inference_dim *= 4
 
@@ -143,10 +143,6 @@ class PSSModel(nn.Module):
         if self.use_gat:
             out_v = self.graph_att(out_v, batch.edge_index)
 
-        # out_scatter = torch_scatter.scatter(out_v, batch_id, dim=0)
-        # out_mean = torch_scatter.scatter_mean(out_v, batch_id, dim=0)
-        # out_max, _ = torch_scatter.scatter_max(out_v, batch_id, dim=0)
-        # out_ = torch.cat((out_mean, out_scatter, out_max), dim=1)
         out_ = self.pool(out_v, batch_id)
         inference = self.inference(out_)
 
