@@ -31,7 +31,7 @@ class ModelConfig(object):
         ex_input=(32, 1),
         ex_hidden=(64, 1),
         drop_rate=0.2,
-        graph_attention=False
+        graph_attention=True
     )
     scheduler_params = dict(
         mode='min',
